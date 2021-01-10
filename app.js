@@ -3,13 +3,15 @@ var searchUrl = document.querySelector(".searchUrl")
 var sumitUrl = document.querySelector(".sumitUrl")
 var sumitWord = document.querySelector(".sumitWord")
 var iframe = document.querySelector("iframe")
+var  videoStatus = document.querySelector(".videoStatus")
 
 var ctx = document.getElementById('myChart');
 var keyWord   //Top3
-var timeLabel //時間
+var timeLabel = [] //時間
 var timeProb  // 機率
 
 var selectWord = []
+var valid = ''
 
 var showUrl //在前端可顯示的樣子
 
@@ -41,6 +43,7 @@ sumitWord.onclick = function(e){
     if (userSearch_vue['search'].indexOf(searchWord) == -1){
         userSearch_vue['search'].push(searchWord)
         selectWord.push(searchWord)
+        sentVideo(searchUrl)
     }
 }
 
@@ -58,15 +61,10 @@ sumitUrl.onclick = function(e){
     // send to server & check valid url
     vaildVideo = sentVideo(searchUrl)
     if (vaildVideo){
-        // 整理網址以show
         searchUrl = searchUrl.split('watch?v=')
         showUrl = searchUrl[0]+"embed/"+searchUrl[1].split("&")[0]
         iframe.src = showUrl
         iframe.classList.remove("hide")
-        ctx.classList.remove("hide")
-
-        // show key word
-        document.querySelector('#keyWord').classList.remove('hide')
     }
     console.log(showUrl);
 }
@@ -75,9 +73,11 @@ function handleChange(checkbox) {
     var labelText = checkbox.parentElement.querySelector('label').innerText
     if(checkbox.checked == true){
         selectWord.push(labelText)
+        sentVideo(searchUrl)
     }else{
         var delIdx = selectWord.indexOf(labelText)
         selectWord.splice(delIdx,1)
+        sentVideo(searchUrl)
     }
     console.log(selectWord)
 }
@@ -86,21 +86,70 @@ function handleChange(checkbox) {
 // 當 "影片網址、搜尋關鍵字" 改變
 // 傳 keyWord、video 給 server
 
-function sentVideo(searchUrl){
-    var valid = true
-    // 主要傳給server的是 "selectWord、辨識影片id"
+function sentVideo(searchUrl){   
+    // 主要傳給server的是 "selectWord、searchUrl"
+    valid = 'Error'
+    console.log(valid)
+
+    var formData = new FormData();
+    var header = new Headers()
+    formData.append("targetUrl",searchUrl)
+    formData.append("keywords",selectWord.join())
+    header.append("Access-Control-Allow-Origin", "*")
+    console.log(formData.getAll('keywords'))
     
-    // 接server資料：TOP3、time、prob
-    keyWord = ['AAA','BBB','CCC'] 
-    timeLabel = ['10s', '20s', '30s', '40s', '50s', '60s', '70s']
-    timeProb = [0, 0.1,0.7,0.3,0.4,0.2,0.3]
+    fetch('http://140.127.208.178:8000/reqVideo', {
+        method: 'POST',
+        body: formData,
+        headers: header,
+        mode: "no-cors"
+    }).then((response) => {
+        console.log(response)
+        return response.json()
+    }).then((reqData)=>{
+        console.log(reqData)
+        valid = reqData[0]
+        timeProb = reqData.slice(1,reqData.length)
+    }).catch(function(error) {
+        console.log(error.message);
+        valid = 'Error'
+    })
 
+    if (valid === 'Error'){
+        videoStatus.classList.remove("hide")
+        videoStatus.querySelectorAll("div")[0].innerText = "喔不 發生了一點錯誤\n小精靈可能找不到影片、或是被壞人脅持了"
+        // document.querySelector("#loader").classList.add("hide")
+        document.querySelector("#box").style.backgroundColor = 'lightcoral'
+    }
+    else if  (valid === 'Pending'){
+        videoStatus.classList.remove("hide")
+        videoStatus.querySelectorAll("div")[0].innerText = "小精靈正在讀取影片..."
+        document.querySelector("#loader").classList.remove("hide")
+    }
+    else if (valid === 'Processing'){
+        videoStatus.querySelectorAll("div")[0].innerText = "已經有其他小精靈在處理ㄌ"
+        document.querySelector("#loader").classList.remove("hide")
+    }
+    else if (valid === 'Success'){
+        // 整理網址以show
+        videoStatus.classList.add("hide")
 
-    keyWord_vue["key"] = keyWord
+        // timeProb = [0, 0.1,0.7,0.3,0.4,0.2,0.3]
+        timeLabel = []
+        for( var i = 0; i< timeProb.length;i++){
+            timeLabel.push(i+"s")
+        }
+
+        if(selectWord.length > 0){
+            ctx.classList.remove("hide")
+        }
+        // show key word
+        // document.querySelector('#keyWord').classList.remove('hide')
+    }
 
     // 接完後端的資料後 才更新前端機率圖
     showCharJS()
-    return valid
+    return (valid === 'Success')
 }
 
 
@@ -144,7 +193,7 @@ function showCharJS(){
 var canvas = document.querySelector("canvas")
 canvas.onclick = function(evt){
     var activePoints = chart.getElementsAtEvent(evt)[0]._index; // activePoints=按下的時間
-    activePoints *= 50
+    // activePoints *= 50
     iframe.src = showUrl + "?start=" + activePoints +"&autoplay=1"
     console.log(activePoints)
 };

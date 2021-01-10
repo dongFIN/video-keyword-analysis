@@ -1,7 +1,7 @@
 body{
     padding: 0;
     margin: 0;
-    background-image: url("back_color05.png");
+    background-image: url("back_BLUE.png");
     /* url("https://i.imgur.com/uHfXyF7.jpg"); 全彩 */
     /* url("https://i.imgur.com/OTzuMDZ.jpg"); 半彩 */
     /* url("https://i.imgur.com/gWCrKjp.jpg"); 黑白 */
@@ -13,6 +13,67 @@ label{
     margin-left: 5px;
 }
 
+
+#loader {
+position: relative;
+top: 15px;
+left: -23px;
+
+}
+@keyframes loader {
+0% { left: -100px }
+100% { left: 110%; }
+}
+#box {
+width: 50px;
+height: 50px;
+background:#6ED8EF;/* rgb(112, 187, 187);*/
+animation: animate .5s linear infinite;
+position: absolute;
+top: 0;
+left: 0;
+border-radius: 3px;
+/* color: lightcoral; */
+}
+@keyframes animate {
+17% { border-bottom-right-radius: 3px; }
+25% { transform: translateY(9px) rotate(22.5deg); }
+50% {
+    transform: translateY(18px) scale(1,.9) rotate(45deg) ;
+    border-bottom-right-radius: 40px;
+}
+75% { transform: translateY(9px) rotate(67.5deg); }
+100% { transform: translateY(0) rotate(90deg); }
+} 
+#shadow { 
+width: 50px;
+height: 5px;
+background: #000;
+opacity: 0.1;
+position: absolute;
+top: 59px;
+left: 0;
+border-radius: 50%;
+animation: shadow .5s linear infinite;
+}
+@keyframes shadow {
+50% {
+    transform: scale(1.2,1);
+}
+}
+.videoStatus{
+    height: 100%;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-self: center;
+    flex-direction: column;
+    font-weight: 800;
+    color: rgb(131, 131, 131);
+    
+    background-color: white;
+    padding-top: 20%;
+}
 .btnMy{
     border: none;
     border-radius: 99em;
